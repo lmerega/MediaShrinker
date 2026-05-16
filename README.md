@@ -41,6 +41,17 @@ open http://localhost:8787
 
 The web UI lets you run **PLAN** (dry run), **RUN** (transcode), or **cleanup** jobs with a single click.
 
+## Prebuilt Docker image (GHCR)
+
+If you don't want to build locally, pull the prebuilt image:
+
+```bash
+cd docker/compose
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+This pulls `ghcr.io/lmerega/mediashrinker:latest` by default.
+
 ## PLAN vs RUN (why PLAN exists)
 
 MediaShrinker is designed to operate safely on large libraries and network mounts. For that reason, **PLAN** is a first-class action, not a debug-only feature.
