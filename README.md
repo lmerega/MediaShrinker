@@ -41,16 +41,14 @@ open http://localhost:8787
 
 The web UI lets you run **PLAN** (dry run), **RUN** (transcode), or **cleanup** jobs with a single click.
 
-## Prebuilt Docker image (GHCR)
+This pulls `ghcr.io/lmerega/mediashrinker:latest` by default.
 
-If you don't want to build locally, pull the prebuilt image:
+To build locally (development), use:
 
 ```bash
 cd docker/compose
-docker compose -f docker-compose.ghcr.yml up -d
+docker compose -f docker-compose.build.yml up -d --build
 ```
-
-This pulls `ghcr.io/lmerega/mediashrinker:latest` by default.
 
 ## PLAN vs RUN (why PLAN exists)
 

@@ -1,14 +1,11 @@
-# ---------------------------------------------------------------------------
-# MediaShrinker — Docker Compose
+# Default deployment: pull the prebuilt image from GHCR.
 #
-# Profili disponibili:
-#   (default)  CPU encoding con libx265
-#   nvidia     GPU NVIDIA con hevc_nvenc  (--profile nvidia)
-#   vaapi      GPU Intel/AMD con hevc_vaapi  (--profile vaapi)
-#   watchd     Demone periodico che ripete RUN ogni MEDIA_WATCH_INTERVAL sec
+# For local build/development (build from source), use:
+#   docker compose -f docker-compose.build.yml up -d --build
 #
-# Copia .env.example → .env e personalizza i path prima di avviare.
-# ---------------------------------------------------------------------------
+# Setup:
+#   cp .env.example .env
+#   edit MOVIES_ROOT / TV_ROOT / STAGING_ROOT / REPORT_ROOT
 
 x-common-env: &common-env
   MEDIA_MOVIES_DIR: /data/movies
@@ -39,22 +36,9 @@ x-common-volumes: &common-volumes
   - "${STAGING_ROOT:-../../staging}:/staging"
   - "${REPORT_ROOT:-../../reports}:/reports"
 
-x-common-build: &common-build
-  context: ../..
-  dockerfile: Dockerfile
-  args:
-    PUID: "${PUID:-1000}"
-    PGID: "${PGID:-1000}"
-    TESSDATA_LANGS: "${TESSDATA_LANGS:-eng ita}"
-
 services:
-
-  # --------------------------------------------------------------------------
-  # Web UI + job manager — CPU encoding (libx265)
-  # --------------------------------------------------------------------------
   mediashrinker:
-    build: *common-build
-    image: mediashrinker:local
+    image: "${GHCR_IMAGE:-ghcr.io/lmerega/mediashrinker:latest}"
     container_name: mediashrinker
     restart: unless-stopped
     ports:
@@ -63,85 +47,4 @@ services:
       <<: *common-env
       MEDIA_ENCODER: "${MEDIA_ENCODER:-auto}"
     volumes: *common-volumes
-    healthcheck:
-      disable: false   # usa il HEALTHCHECK del Dockerfile
 
-  # --------------------------------------------------------------------------
-  # NVIDIA hevc_nvenc  →  docker compose --profile nvidia up -d mediashrinker-nvidia
-  # Richiede NVIDIA Container Toolkit sul host.
-  # --------------------------------------------------------------------------
-  mediashrinker-nvidia:
-    profiles: ["nvidia"]
-    build: *common-build
-    image: mediashrinker:local
-    container_name: mediashrinker-nvidia
-    restart: unless-stopped
-    ports:
-      - "${MEDIA_PORT:-8787}:8787"
-    environment:
-      <<: *common-env
-      MEDIA_ENCODER: hevc_nvenc
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,video,utility
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu, video]
-    volumes: *common-volumes
-
-  # --------------------------------------------------------------------------
-  # Intel / AMD VAAPI  →  docker compose --profile vaapi up -d mediashrinker-vaapi
-  # Richiede /dev/dri/renderD128 sul host (driver i915 o amdgpu).
-  # --------------------------------------------------------------------------
-  mediashrinker-vaapi:
-    profiles: ["vaapi"]
-    build: *common-build
-    image: mediashrinker:local
-    container_name: mediashrinker-vaapi
-    restart: unless-stopped
-    ports:
-      - "${MEDIA_PORT:-8787}:8787"
-    environment:
-      <<: *common-env
-      MEDIA_ENCODER: hevc_vaapi
-    devices:
-      - /dev/dri:/dev/dri
-    volumes: *common-volumes
-
-  # --------------------------------------------------------------------------
-  # Demone periodico (no web UI)  →  docker compose --profile watchd up -d mediashrinker-watchd
-  # Esegue RUN ogni MEDIA_WATCH_INTERVAL secondi.
-  # --------------------------------------------------------------------------
-  mediashrinker-watchd:
-    profiles: ["watchd"]
-    build: *common-build
-    image: mediashrinker:local
-    container_name: mediashrinker-watchd
-    restart: unless-stopped
-    command: ["watchd"]
-    environment:
-      <<: *common-env
-      MEDIA_ENCODER: "${MEDIA_ENCODER:-auto}"
-    volumes: *common-volumes
-    healthcheck:
-      disable: true   # nessuna web UI in modalità watchd
-
-  # --------------------------------------------------------------------------
-  # Controllo hardware  →  docker compose --profile hwcheck run --rm mediashrinker-hwcheck
-  # --------------------------------------------------------------------------
-  mediashrinker-hwcheck:
-    profiles: ["hwcheck"]
-    build: *common-build
-    image: mediashrinker:local
-    container_name: mediashrinker-hwcheck
-    command: ["hwcheck"]
-    environment:
-      <<: *common-env
-    devices:
-      - /dev/dri:/dev/dri
-    volumes: *common-volumes
-    healthcheck:
-      disable: true

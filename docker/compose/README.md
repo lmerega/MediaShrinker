@@ -60,21 +60,21 @@ Recommended workflow: run PLAN first, check `/dashboard` and the run detail page
 ## 2) Start
 
 ```bash
-docker compose up -d --build mediashrinker
+docker compose up -d
 ```
 
-## Prebuilt image (GHCR)
+By default this pulls `ghcr.io/lmerega/mediashrinker:latest`.
 
-If you prefer not to build locally, use the prebuilt image:
+Override the image if needed:
 
 ```bash
-docker compose -f docker-compose.ghcr.yml up -d
+GHCR_IMAGE=ghcr.io/<owner>/mediashrinker:latest docker compose up -d
 ```
 
-By default it pulls `ghcr.io/lmerega/mediashrinker:latest`. Override with:
+## Local build / development
 
 ```bash
-GHCR_IMAGE=ghcr.io/<owner>/mediashrinker:latest docker compose -f docker-compose.ghcr.yml up -d
+docker compose -f docker-compose.build.yml up -d --build
 ```
 
 Open:
